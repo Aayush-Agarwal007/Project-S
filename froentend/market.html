@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crypto Market</title>
+  <title>Crypto Market Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <style>
     body {
       background-color: #0f172a;
@@ -15,7 +17,28 @@
       background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     }
     .table-row:hover {
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    .positive-change {
+      color: #4ade80;
+    }
+    .negative-change {
+      color: #f87171;
+    }
+    .loading-spinner {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #6366f1;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .chart-container {
+      height: 300px;
     }
   </style>
 </head>
@@ -35,16 +58,40 @@
 
   <!-- Market Data Section -->
   <section class="container mx-auto px-6 py-10">
-    <h2 class="text-3xl font-bold text-purple-700 mb-6 text-center">Top Cryptocurrencies</h2>
-    <div class="overflow-x-auto bg-gray-800 shadow-md rounded-lg">
+    <h2 class="text-3xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-500">
+      Crypto Market Dashboard
+    </h2>
+
+    <!-- Crypto Selection -->
+    <div class="mb-8">
+      <label for="crypto-select" class="block mb-2 text-gray-300">Select Cryptocurrency:</label>
+      <select id="crypto-select" class="bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2">
+        <option value="BTCUSDT">Bitcoin (BTC)</option>
+        <option value="ETHUSDT">Ethereum (ETH)</option>
+        <option value="BNBUSDT">Binance Coin (BNB)</option>
+        <option value="SOLUSDT">Solana (SOL)</option>
+        <option value="ADAUSDT">Cardano (ADA)</option>
+        <option value="XRPUSDT">Ripple (XRP)</option>
+      </select>
+    </div>
+
+    <!-- Price Chart -->
+    <div class="bg-gray-800 rounded-lg p-4 mb-8">
+      <div class="chart-container">
+        <canvas id="price-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Market Data Table -->
+    <div class="overflow-x-auto bg-gray-800 shadow-md rounded-lg mb-8">
       <table class="min-w-full border-collapse">
         <thead class="table-header text-white">
           <tr>
-            <th class="px-6 py-3 text-left">Rank</th>
-            <th class="px-6 py-3 text-left">Name</th>
             <th class="px-6 py-3 text-left">Symbol</th>
-            <th class="px-6 py-3 text-left">Price (USD)</th>
-            <th class="px-6 py-3 text-left">Market Cap</th>
+            <th class="px-6 py-3 text-left">Price</th>
+            <th class="px-6 py-3 text-left">24h Change</th>
+            <th class="px-6 py-3 text-left">24h Volume</th>
+            <th class="px-6 py-3 text-left">Actions</th>
           </tr>
         </thead>
         <tbody id="crypto-table" class="divide-y divide-gray-700">
@@ -52,36 +99,184 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="flex justify-center items-center py-12">
+      <div class="loading-spinner"></div>
+      <span class="ml-3 text-lg">Loading market data...</span>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-container" class="hidden text-center py-12">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 mb-4">
+        <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+      </div>
+      <h3 class="text-xl font-medium text-gray-300 mb-2">Failed to load market data</h3>
+      <button id="retry-btn" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
+        Try Again
+      </button>
+    </div>
   </section>
 
-  <!-- Script to Fetch Data -->
   <script>
-    async function loadCryptoData() {
+    // DOM Elements
+    const cryptoTable = document.getElementById('crypto-table');
+    const loadingElement = document.getElementById('loading');
+    const errorContainer = document.getElementById('error-container');
+    const retryBtn = document.getElementById('retry-btn');
+    const cryptoSelect = document.getElementById('crypto-select');
+    const priceChartCtx = document.getElementById('price-chart').getContext('2d');
+
+    // FastAPI Backend Configuration
+    const API_URL = 'http://127.0.0.1:8000'; // Update this if your backend is hosted elsewhere
+    
+    // Chart instance
+    let priceChart;
+
+    // Fetch ticker data from FastAPI
+    async function fetchTickerData(symbol) {
       try {
-        let res = await fetch("http://127.0.0.1:8000/cryptos"); // Backend API
-        let data = await res.json();
-
-        let tableBody = document.getElementById("crypto-table");
-        tableBody.innerHTML = "";
-
-        data.forEach((coin, index) => {
-          let row = `
-            <tr class="table-row">
-              <td class="px-6 py-3">${index + 1}</td>
-              <td class="px-6 py-3">${coin.name}</td>
-              <td class="px-6 py-3">${coin.symbol.toUpperCase()}</td>
-              <td class="px-6 py-3">$${coin.current_price.toLocaleString()}</td>
-              <td class="px-6 py-3">$${coin.market_cap.toLocaleString()}</td>
-            </tr>
-          `;
-          tableBody.innerHTML += row;
-        });
-      } catch (err) {
-        console.error("Error fetching crypto data:", err);
+        const response = await axios.get(`${API_URL}/binance/price/${symbol}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching ticker data:', error);
+        throw error;
       }
     }
 
-    loadCryptoData();
+    // Fetch historical data for chart
+    async function fetchHistoricalData(symbol, days = 1) {
+      try {
+        const response = await axios.get(`${API_URL}/ohlc/${symbol}?days=${days}`);
+        return response.data.series.map(item => ({
+          time: new Date(item.ts),
+          close: item.price
+        }));
+      } catch (error) {
+        console.error('Error fetching historical data:', error);
+        throw error;
+      }
+    }
+
+    // Display market data in table
+    async function displayMarketData() {
+      try {
+        loadingElement.classList.remove('hidden');
+        cryptoTable.innerHTML = '';
+        errorContainer.classList.add('hidden');
+
+        const results = await Promise.all(['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT'].map(symbol => fetchTickerData(symbol)));
+        
+        results.forEach(data => {
+          const changePercent = parseFloat(data.priceChangePercent);
+          const changeClass = changePercent >= 0 ? 'positive-change' : 'negative-change';
+          const changeSign = changePercent >= 0 ? '+' : '';
+          
+          const row = document.createElement('tr');
+          row.className = 'table-row';
+          row.innerHTML = `
+            <td class="px-6 py-4">${data.symbol.replace('USDT', '')}</td>
+            <td class="px-6 py-4">$${parseFloat(data.price).toFixed(2)}</td>
+            <td class="px-6 py-4 ${changeClass}">${changeSign}${changePercent}%</td>
+            <td class="px-6 py-4">$${(parseFloat(data.volume)/1000000).toFixed(2)}M</td>
+            <td class="px-6 py-4">
+              <button onclick="loadChart('${data.symbol}')" class="px-3 py-1 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition">
+                View Chart
+              </button>
+            </td>
+          `;
+          cryptoTable.appendChild(row);
+        });
+
+        // Load initial chart
+        loadChart(cryptoSelect.value);
+
+      } catch (error) {
+        console.error('Error displaying market data:', error);
+        loadingElement.classList.add('hidden');
+        errorContainer.classList.remove('hidden');
+      } finally {
+        loadingElement.classList.add('hidden');
+      }
+    }
+
+    // Create or update price chart
+    async function loadChart(symbol) {
+      try {
+        const historicalData = await fetchHistoricalData(symbol);
+        const labels = historicalData.map(item => item.time.toLocaleDateString());
+        const prices = historicalData.map(item => item.close);
+        
+        if (priceChart) {
+          priceChart.data.labels = labels;
+          priceChart.data.datasets[0].data = prices;
+          priceChart.update();
+        } else {
+          priceChart = new Chart(priceChartCtx, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: `${symbol.replace('USDT', '')} Price (USD)`,
+                data: prices,
+                borderColor: 'rgb(109, 40, 217)',
+                backgroundColor: 'rgba(109, 40, 217, 0.1)',
+                borderWidth: 2,
+                tension: 0.1,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: false,
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  ticks: {
+                    color: '#e2e8f0'
+                  }
+                },
+                x: {
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                  },
+                  ticks: {
+                    color: '#e2e8f0'
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  labels: {
+                    color: '#e2e8f0'
+                  }
+                },
+                tooltip: {
+                  mode: 'index',
+                  intersect: false
+                }
+              }
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error loading chart:', error);
+      }
+    }
+
+    // Crypto selection change handler
+    cryptoSelect.addEventListener('change', (e) => {
+      loadChart(e.target.value);
+    });
+
+    // Event Listeners
+    retryBtn.addEventListener('click', displayMarketData);
+    
+    // Initialize
+    displayMarketData();
   </script>
 </body>
 </html>
