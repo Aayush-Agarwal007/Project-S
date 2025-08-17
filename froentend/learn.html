@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoSense-AI | Your Financial Guidance Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'finance-blue': '#1E40AF',
+                        'trust-green': '#15803D',
+                        'crypto-purple': '#6B21A8',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+        .message-bubble {
+            max-width: 80%;
+        }
+        .typing-indicator::after {
+            content: '...';
+            animation: typing 1.5s infinite;
+        }
+        @keyframes typing {
+            0% { content: '.'; }
+            50% { content: '..'; }
+            100% { content: '...'; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-10 h-10 bg-finance-blue rounded-full flex items-center justify-center text-white font-bold text-xl">CS</div>
+                    <h1 class="text-2xl font-bold text-finance-blue">CryptoSense-AI</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="#" class="text-gray-600 hover:text-finance-blue">Learn</a>
+                    <a href="#" class="text-gray-600 hover:text-finance-blue">Resources</a>
+                    <button id="intercom-launcher" class="px-4 py-2 bg-trust-green text-white rounded-md hover:bg-green-700 transition">Get Help</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-finance-blue to-crypto-purple text-white">
+        <div class="container mx-auto px-4 py-16">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-8 md:mb-0">
+                    <h2 class="text-4xl font-bold mb-4">Your Personal Finance & Crypto Advisor</h2>
+                    <p class="text-xl mb-6">Novice-friendly guidance on stocks, cryptocurrencies and financial planning from our AI assistant.</p>
+                    <div class="flex space-x-4">
+                        <button class="px-6 py-3 bg-white text-finance-blue rounded-md font-semibold hover:bg-gray-100 transition">Start Learning</button>
+                        <button class="px-6 py-3 border-2 border-white rounded-md font-semibold hover:bg-white hover:text-finance-blue transition">Ask Questions</button>
+                    </div>
+                </div>
+                <div class="md:w-1/2">
+                    <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/d1513ac9-7bcb-4719-93c8-b6608f9501a7.png" alt="Futuristic digital interface showing cryptocurrency charts and financial data visualization with blue and purple tones" class="rounded-lg shadow-xl" />
+                </div>
+            </div>
+        </div>
+    </section>
+<!-- 
+    Chat Interface
+    <section class="container mx-auto px-4 py-12">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-finance-blue text-white px-6 py-4">
+                <h3 class="text-xl font-semibold">CryptoSense-AI Assistant</h3>
+                <p class="text-sm opacity-90">Ask me anything about finance, stocks or crypto</p>
+            </div>
+            
+            <div class="chat-container p-6 space-y-4 overflow-y-auto">
+                <!-- Bot Message
+                <div class="flex">
+                    <div class="message-bubble bg-gray-100 rounded-r-lg rounded-bl-lg p-4">
+                        <p>Hello! I'm CryptoSense-AI, your financial assistant. How can I help you understand stocks, cryptocurrencies, or general finance today?</p>
+                        <p class="mt-2 text-sm text-gray-500">12:34 PM</p>
+                    </div>
+                </div>
+                
+                Suggested Questions
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button class="bg-gray-100 hover:bg-gray-200 rounded-lg p-3 text-left transition">What's the difference between stocks and crypto?</button>
+                    <button class="bg-gray-100 hover:bg-gray-200 rounded-lg p-3 text-left transition">How do I start investing with little money?</button>
+                    <button class="bg-gray-100 hover:bg-gray-200 rounded-lg p-3 text-left transition">Explain blockchain in simple terms</button>
+                    <button class="bg-gray-100 hover:bg-gray-200 rounded-lg p-3 text-left transition">What are some basic financial terms I should know?</button>
+                </div>
+            </div>
+            
+            Input Area -->
+            <!-- <div class="border-t border-gray-200 p-4">
+                <div class="flex items-center">
+                    <input type="text" placeholder="Ask CryptoSense-AI about finance..." class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-finance-blue">
+                    <button class="bg-trust-green text-white px-6 py-2 rounded-r-lg hover:bg-green-700 transition">Send</button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">CryptoSense-AI is connected to financial databases and provides educational content only.</p>
+            </div>
+        </div>
+    </section>  -->
+
+    <!-- Features Section -->
+    <section class="bg-gray-50 py-12">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-finance-blue">How CryptoSense-AI Helps You</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
+                    <div class="bg-finance-blue bg-opacity-10 p-3 rounded-full w-max mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-finance-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Market Insights</h3>
+                    <p class="text-gray-600">Understand market trends and basic analysis without technical jargon.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
+                    <div class="bg-trust-green bg-opacity-10 p-3 rounded-full w-max mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-trust-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Beginner Guides</h3>
+                    <p class="text-gray-600">Step-by-step explanations of financial concepts tailored for newcomers.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
+                    <div class="bg-crypto-purple bg-opacity-10 p-3 rounded-full w-max mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-crypto-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Portfolio Basics</h3>
+                    <p class="text-gray-600">Learn how to diversify and manage your investments responsibly.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integration Section -->
+    <section class="bg-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="bg-finance-blue bg-opacity-10 p-4 rounded-full w-max mx-auto mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-finance-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold mb-6 text-finance-blue">24/7 Financial Guidance</h2>
+                <p class="text-xl text-gray-600 mb-8">CryptoSense-AI is powered by Intercom's AI platform, providing you with instant access to financial knowledge whenever you need it.</p>
+                <button id="activate-chat" class="px-8 py-3 bg-finance-blue text-white rounded-md font-semibold hover:bg-blue-800 transition">Connect with CryptoSense-AI</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white">
+        <div class="container mx-auto px-4 py-8">
+            <div class="flex flex-col md:flex-row justify-between">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-8 h-8 bg-finance-blue rounded-full flex items-center justify-center text-white font-bold">CS</div>
+                        <h3 class="text-xl font-bold">CryptoSense-AI</h3>
+                    </div>
+                    <p class="text-gray-400 max-w-md">Educational financial guidance powered by AI. Not financial advice.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">Learn</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white">Stocks</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">Crypto</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">Financial Terms</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">Company</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white">About</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">Careers</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">Legal</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white">Terms</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">Privacy</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">Disclaimers</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-sm text-gray-400">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <p>© 2023 CryptoSense-AI. All rights reserved.</p>
+                    <div class="flex space-x-6 mt-4 md:mt-0">
+                        <a href="#"><img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/1aae802d-ac09-4528-8c37-0b4f8a312189.png" alt="Twitter social media icon" /></a>
+                        <a href="#"><img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/88976524-9252-40f8-849c-de3a2a26563f.png" alt="LinkedIn social media icon" /></a>
+                        <a href="#"><img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/2f315cd2-e860-406a-9532-e6e142fd2d14.png" alt="Facebook social media icon" /></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Intercom Integration Script -->
+     <!-- Intercom Settings -->
+<script>
+  window.intercomSettings = {
+    app_id: "dtp9l5l6",   // Replace with your real app_id
+    api_base: "https://api-iam.intercom.io"
+  };
+</script>
+
+<!-- Intercom Loader -->
+<script>
+  (function(){
+    var w=window;var ic=w.Intercom;
+    if(typeof ic==="function"){
+      ic('reattach_activator');ic('update',w.intercomSettings);
+    }else{
+      var d=document;var i=function(){i.c(arguments);};
+      i.q=[];i.c=function(args){i.q.push(args);};
+      w.Intercom=i;
+      var l=function(){
+        var s=d.createElement('script');s.type='text/javascript';s.async=true;
+        s.src='https://widget.intercom.io/widget/dtp9l5l6';
+        var x=d.getElementsByTagName('script')[0];
+        x.parentNode.insertBefore(s,x);
+      };
+      if(document.readyState==='complete'){l();}
+      else if(w.attachEvent){w.attachEvent('onload',l);}
+      else{w.addEventListener('load',l,false);}
+    }
+  })();
+</script>
+
+    
+</body>
+</html>
+
