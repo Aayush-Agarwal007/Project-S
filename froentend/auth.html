@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Auth Example</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-auth-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .auth-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .auth-header h2 {
+            margin: 0;
+            color: #4285f4;
+            font-size: 24px;
+        }
+        
+        .auth-header p {
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            border-color: #4285f4;
+            outline: none;
+        }
+        
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3367d6;
+        }
+        
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .auth-toggle a {
+            color: #4285f4;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .auth-toggle a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            color: #d32f2f;
+            background-color: #fce4e4;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .success-message {
+            color: #388e3c;
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="error-message" id="error-message"></div>
+        <div class="success-message" id="success-message"></div>
+        
+        <div id="sign-in-form">
+            <div class="auth-header">
+                <h2>Sign In</h2>
+                <p>Welcome back! Please enter your credentials.</p>
+            </div>
+            <form class="auth-form" id="signin-form">
+                <div class="form-group">
+                    <label for="signin-email">Email</label>
+                    <input type="email" id="signin-email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="signin-password">Password</label>
+                    <input type="password" id="signin-password" required placeholder="Enter your password">
+                </div>
+                <button type="submit" id="signin-button">Sign In</button>
+            </form>
+            <div class="auth-toggle">
+                Don't have an account? <a href="#" id="show-signup">Sign Up</a>
+            </div>
+        </div>
+        
+        <div id="sign-up-form" style="display: none;">
+            <div class="auth-header">
+                <h2>Sign Up</h2>
+                <p>Create a new account to get started.</p>
+            </div>
+            <form class="auth-form" id="signup-form">
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" required placeholder="Create a password">
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <input type="password" id="signup-confirm-password" required placeholder="Confirm your password">
+                </div>
+                <button type="submit" id="signup-button">Sign Up</button>
+            </form>
+            <div class="auth-toggle">
+                Already have an account? <a href="#" id="show-signin">Sign In</a>
+            </div>
+        </div>
+    </div>
+   
+
+    <script>
+        
+       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCIjCylofttINeOaZx8DVfmxYFA3m2YEFI",
+  authDomain: "crypto-13379.firebaseapp.com",
+  projectId: "crypto-13379",
+  storageBucket: "crypto-13379.firebasestorage.app",
+  messagingSenderId: "1041071515013",
+  appId: "1:1041071515013:web:3155392e9b240112c090ec",
+  measurementId: "G-31MJ4RQER9"
+};
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // DOM elements
+        const signInForm = document.getElementById('sign-in-form');
+        const signUpForm = document.getElementById('sign-up-form');
+        const showSignIn = document.getElementById('show-signin');
+        const showSignUp = document.getElementById('show-signup');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        
+        // Form toggle functionality
+        showSignUp.addEventListener('click', (e) => {
+            e.preventDefault();
+            signInForm.style.display = 'none';
+            signUpForm.style.display = 'block';
+            hideMessages();
+        });
+        
+        showSignIn.addEventListener('click', (e) => {
+            e.preventDefault();
+            signUpForm.style.display = 'none';
+            signInForm.style.display = 'block';
+            hideMessages();
+        });
+        
+        // Hide error/success messages
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+        
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+        
+        // Show success message
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+        }
+        
+        // Sign up with email and password
+        document.getElementById('signup-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                showError('Passwords do not match');
+                return;
+            }
+            
+            // Validate password length
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters');
+                return;
+            }
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed up successfully
+                    showSuccess('Account created successfully!');
+                    document.getElementById('signup-form').reset();
+                })
+                .catch((error) => {
+                    // Handle errors
+                    let errorMessage;
+                    switch (error.code) {
+                        case 'auth/email-already-in-use':
+                            errorMessage = 'This email is already registered.';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = 'Please enter a valid email address.';
+                            break;
+                        case 'auth/weak-password':
+                            errorMessage = 'Password is too weak.';
+                            break;
+                        default:
+                            errorMessage = error.message;
+                    }
+                    showError(errorMessage);
+                });
+        });
+        
+        // Sign in with email and password
+        document.getElementById('signin-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('signin-email').value;
+            const password = document.getElementById('signin-password').value;
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed in successfully
+                    showSuccess('Signed in successfully!');
+                    console.log('User signed in:', userCredential.user);
+                    // You can redirect to another page here if needed
+                    // window.location.href = 'dashboard.html';
+                })
+                .catch((error) => {
+                    // Handle errors
+                    let errorMessage;
+                    switch (error.code) {
+                        case 'auth/user-not-found':
+                        case 'auth/wrong-password':
+                            errorMessage = 'Invalid email or password.';
+                            break;
+                        case 'auth/user-disabled':
+                            errorMessage = 'This account has been disabled.';
+                            break;
+                        default:
+                            errorMessage = error.message;
+                    }
+                    showError(errorMessage);
+                });
+        });
+        
+        // Listen for auth state changes (optional)
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in
+                console.log('User is signed in:', user);
+            } else {
+                // User is signed out
+                console.log('User is signed out');
+            }
+        });
+        document.getElementById('signup-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('new-email').value;
+    const password = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    if (password !== confirmPassword) {
+        showMessage('error', 'Passwords do not match');
+        return;
+    }
+    
+    if (password.length < 6) {
+        showMessage('error', 'Password must be at least 6 characters');
+        return;
+    }
+    
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            showMessage('success', 'Account created successfully! Redirecting...');
+            setTimeout(() => {
+                window.location.href = "index.html"; // Redirect to index.html
+            }, 1500); // 1.5 second delay to show success message
+        })
+        .catch((error) => {
+            // Error handling remains the same
+        });
+});
+
+    </script>
+</body>
+</html>
