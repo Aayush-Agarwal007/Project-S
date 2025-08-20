@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase Auth Example</title>
+    <title>Crypto Trading Authentication</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-auth-compat.js"></script>
@@ -177,20 +177,19 @@
             </div>
         </div>
     </div>
-   
 
     <script>
-        
-       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCIjCylofttINeOaZx8DVfmxYFA3m2YEFI",
-  authDomain: "crypto-13379.firebaseapp.com",
-  projectId: "crypto-13379",
-  storageBucket: "crypto-13379.firebasestorage.app",
-  messagingSenderId: "1041071515013",
-  appId: "1:1041071515013:web:3155392e9b240112c090ec",
-  measurementId: "G-31MJ4RQER9"
-};
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIjCylofttINeOaZx8DVfmxYFA3m2YEFI",
+            authDomain: "crypto-13379.firebaseapp.com",
+            projectId: "crypto-13379",
+            storageBucket: "crypto-13379.appspot.com",
+            messagingSenderId: "1041071515013",
+            appId: "1:1041071515013:web:3155392e9b240112c090ec",
+            measurementId: "G-31MJ4RQER9"
+        };
+
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
@@ -259,11 +258,14 @@ const firebaseConfig = {
             auth.createUserWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     // Signed up successfully
-                    showSuccess('Account created successfully!');
+                    showSuccess('Account created successfully! Redirecting...');
                     document.getElementById('signup-form').reset();
+                    // Redirect to index.html after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
                 })
                 .catch((error) => {
-                    // Handle errors
                     let errorMessage;
                     switch (error.code) {
                         case 'auth/email-already-in-use':
@@ -292,13 +294,13 @@ const firebaseConfig = {
             auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     // Signed in successfully
-                    showSuccess('Signed in successfully!');
-                    console.log('User signed in:', userCredential.user);
-                    // You can redirect to another page here if needed
-                    // window.location.href = 'dashboard.html';
+                    showSuccess('Signed in successfully! Redirecting...');
+                    // Redirect to index.html after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
                 })
                 .catch((error) => {
-                    // Handle errors
                     let errorMessage;
                     switch (error.code) {
                         case 'auth/user-not-found':
@@ -315,45 +317,14 @@ const firebaseConfig = {
                 });
         });
         
-        // Listen for auth state changes (optional)
+        // Listen for auth state changes
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // User is signed in
-                console.log('User is signed in:', user);
+                console.log('User logged in:', user.email);
             } else {
-                // User is signed out
-                console.log('User is signed out');
+                console.log('User logged out');
             }
         });
-        document.getElementById('signup-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    const email = document.getElementById('new-email').value;
-    const password = document.getElementById('new-password').value;
-    const confirmPassword = document.getElementById('confirm-password').value;
-    
-    if (password !== confirmPassword) {
-        showMessage('error', 'Passwords do not match');
-        return;
-    }
-    
-    if (password.length < 6) {
-        showMessage('error', 'Password must be at least 6 characters');
-        return;
-    }
-    
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            showMessage('success', 'Account created successfully! Redirecting...');
-            setTimeout(() => {
-                window.location.href = "index.html"; // Redirect to index.html
-            }, 1500); // 1.5 second delay to show success message
-        })
-        .catch((error) => {
-            // Error handling remains the same
-        });
-});
-
     </script>
 </body>
 </html>
