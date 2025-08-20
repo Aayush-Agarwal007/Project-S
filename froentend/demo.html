@@ -6,6 +6,7 @@
     <title>Crypto Trading Demo | Virtual Portfolio</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-messaging-compat.js"></script>
     <!-- Chart.js for price charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Firebase -->
@@ -48,6 +49,88 @@
         .btn-danger {
             background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
         }
+        /* Add this to your existing style tags in all HTML files */
+
+/* Notification styles */
+.fixed {
+  position: fixed;
+}
+
+.top-4 {
+  top: 1rem;
+}
+
+.right-4 {
+  right: 1rem;
+}
+
+.z-50 {
+  z-index: 50;
+}
+
+.bg-green-100 {
+  background-color: #dcfce7;
+}
+
+.bg-red-100 {
+  background-color: #fee2e2;
+}
+
+.border-green-500 {
+  border-color: #22c55e;
+}
+
+.border-red-500 {
+  border-color: #ef4444;
+}
+
+.border-l-4 {
+  border-left-width: 4px;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.flex {
+  display: flex;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.hover\:text-gray-700:hover {
+  color: #374151;
+}
     </style>
 </head>
 <body class="min-h-screen gradient-bg">
@@ -83,6 +166,7 @@
             </div>
         </div>
     </nav>
+    
 
     <!-- Main Content -->
     <div class="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -294,20 +378,16 @@
 
     <!-- Backend Scripts -->
     <script>
-        // Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCOFndrtqX-ZLDlbpT9SI2k7P78EllP9LI",
+  authDomain: "project-s-8b77b.firebaseapp.com",
+  projectId: "project-s-8b77b",
+  storageBucket: "project-s-8b77b.firebasestorage.app",
+  messagingSenderId: "915091110149",
+  appId: "1:915091110149:web:8c7625e10c00f379819f6c",
+  measurementId: "G-V8F7Z59X07"
+};
         // Demo Trade Data
         let demoUser = {
             balance: 10000,
@@ -708,6 +788,143 @@
         
         // In a real app, you would have Firebase auth state observer
         // to handle user login/logout and data syncing
+        // Add this code at the bottom of your existing demo.html script
+
+// Simple AI logic for buy/sell signals
+// Add this code right after the AI logic in demo.html
+
+// Check for AI signals periodically
+setInterval(() => {
+  if (firebase.auth().currentUser) {
+    checkForSignals();
+  }
+}, 30 * 1000); // 5 minutes
+
+async function checkForSignals() {
+  // Get user's portfolio
+  const user = firebase.auth().currentUser;
+  const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+  const portfolio = userDoc.data().portfolio || {};
+  
+  // Check each cryptocurrency in portfolio
+  for (const [symbol, amount] of Object.entries(portfolio)) {
+    if (amount > 0) {
+      // Get price data (you'll need to implement this)
+      const priceData = await fetchPriceData(symbol);
+      
+      // Generate signal
+      // Add this code right after the signal checking code in demo.html
+
+function sendNotification(signal) {
+  // Show browser notification
+  if (Notification.permission === 'granted') {
+    new Notification(`Crypto Signal: ${signal.action} ${signal.symbol}`, {
+      body: signal.message,
+      icon: '/icon.png' // Add your app icon
+    });
+  }
+  
+  // Show in-app notification
+  showInAppNotification(signal);
+}
+
+function showInAppNotification(signal) {
+  const notification = document.createElement('div');
+  notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+    signal.action === 'BUY' ? 'bg-green-100 border-l-4 border-green-500' : 'bg-red-100 border-l-4 border-red-500'
+  }`;
+  notification.innerHTML = `
+    <div class="flex justify-between items-start">
+      <div>
+        <h3 class="font-bold">${signal.action} ${signal.symbol}</h3>
+        <p class="text-sm mt-1">${signal.message}</p>
+      </div>
+      <button class="text-gray-500 hover:text-gray-700" onclick="this.parentElement.parentElement.remove()">
+        &times;
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto remove after 10 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 10000);
+}
+      const signal = generateAISignal(symbol, priceData);
+      
+      if (signal) {
+        // Send notification
+        sendNotification(signal);
+      }
+    }
+  }
+}
+
+// You'll need to implement this function based on your data source
+async function fetchPriceData(symbol) {
+  // This is a placeholder - implement based on your API
+  console.log("Fetching price data for:", symbol);
+  // Return mock data for now
+  return [
+    {close: 40000}, {close: 40500}, {close: 40300}, {close: 40700}, {close: 41000},
+    {close: 41200}, {close: 41500}, {close: 41300}, {close: 41600}, {close: 42000}
+  ];
+}
+function generateAISignal(symbol, priceData) {
+  // Simple moving average strategy
+  if (priceData.length < 10) return null;
+  
+  const shortPeriod = 5;
+  const longPeriod = 10;
+  
+  // Calculate short and long moving averages
+  const shortMA = calculateMA(priceData, shortPeriod);
+  const longMA = calculateMA(priceData, longPeriod);
+  
+  const currentShort = shortMA[shortMA.length - 1];
+  const currentLong = longMA[longMA.length - 1];
+  const prevShort = shortMA[shortMA.length - 2];
+  const prevLong = longMA[longMA.length - 2];
+  
+  // Buy signal: short MA crosses above long MA
+  if (prevShort <= prevLong && currentShort > currentLong) {
+    return {
+      action: 'BUY',
+      symbol: symbol,
+      confidence: 0.7,
+      message: `Buy ${symbol}: Short-term trend turning bullish`
+    };
+  }
+  
+  // Sell signal: short MA crosses below long MA
+  if (prevShort >= prevLong && currentShort < currentLong) {
+    return {
+      action: 'SELL',
+      symbol: symbol,
+      confidence: 0.6,
+      message: `Sell ${symbol}: Short-term trend turning bearish`
+    };
+  }
+  
+  return null;
+}
+
+// Calculate moving average
+function calculateMA(data, period) {
+  const result = [];
+  for (let i = period - 1; i < data.length; i++) {
+    let sum = 0;
+    for (let j = 0; j < period; j++) {
+      sum += data[i - j].close;
+    }
+    result.push(sum / period);
+  }
+  return result;
+}
     </script>
 </body>
 </html>
