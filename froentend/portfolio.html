@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Demo Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-gray-800 p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 to-purple-400">
+                CryptoDemo Portfolio
+            </h1>
+            <div class="flex items-center space-x-4">
+                <span id="balance-display" class="px-3 py-1 bg-indigo-600 rounded-lg">
+                    Loading...
+                </span>
+                <a href="market.html" class="text-white hover:text-gray-300">Market</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 space-y-6">
+        <!-- Portfolio Summary -->
+         <!-- Add this to your portfolio summary section -->
+<div class="bg-gray-800/50 p-4 rounded-lg mt-4">
+    <p class="text-gray-400 mb-1">Market Sentiment</p>
+    <div id="sentiment-display" class="flex items-center">
+        <span class="sentiment-icon mr-2">📊</span>
+        <span class="sentiment-text">Analyzing...</span>
+    </div>
+</div>
+
+<script>
+// Example sentiment analysis function
+async function analyzeSentiment() {
+    try {
+        // In a real implementation, you would call an AI API
+        const symbols = Object.keys(demoUser.portfolio);
+        const sentimentResults = await Promise.all(
+            symbols.map(symbol => fetchSentimentData(symbol))
+        );
+        
+        const overallSentiment = calculateOverallSentiment(sentimentResults);
+        updateSentimentDisplay(overallSentiment);
+    } catch (error) {
+        console.error("Sentiment analysis failed:", error);
+    }
+}
+
+function updateSentimentDisplay(sentiment) {
+    const display = document.getElementById('sentiment-display');
+    const icon = display.querySelector('.sentiment-icon');
+    const text = display.querySelector('.sentiment-text');
+    
+    if (sentiment > 0.6) {
+        icon.textContent = '🚀';
+        text.textContent = 'Very Bullish';
+        text.className = 'sentiment-text text-green-400';
+    } else if (sentiment > 0.4) {
+        icon.textContent = '📈';
+        text.textContent = 'Bullish';
+        text.className = 'sentiment-text text-green-300';
+    } else if (sentiment > 0.3) {
+        icon.textContent = '📊';
+        text.textContent = 'Neutral';
+        text.className = 'sentiment-text text-yellow-400';
+    } else if (sentiment > 0.1) {
+        icon.textContent = '📉';
+        text.textContent = 'Bearish';
+        text.className = 'sentiment-text text-orange-400';
+    } else {
+        icon.textContent = '💀';
+        text.textContent = 'Very Bearish';
+        text.className = 'sentiment-text text-red-400';
+    }
+}
+
+// Call this function when initializing your portfolio
+analyzeSentiment();
+</script>
+        <div class="card rounded-xl p-6 shadow-lg">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">Portfolio Summary</h2>
+                    <p class="text-gray-400">Your current crypto holdings and performance</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="reset-demo" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700">
+                        Reset Demo
+                    </button>
+                    <button id="export-trades" class="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700">
+                        Export Trades
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
+                <div class="col-span-1">
+                    <div class="bg-gray-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 mb-1">Total Balance</p>
+                        <p id="total-balance" class="text-2xl font-bold">$10,000.00</p>
+                    </div>
+                </div>
+                <div class="col-span-1">
+                    <div class="bg-gray-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 mb-1">Profit/Loss (24h)</p>
+                        <p id="profit-loss" class="text-2xl font-bold text-green-400">+$284.92 (+2.85%)</p>
+                    </div>
+                </div>
+                <div class="col-span-1">
+                    <div class="bg-gray-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 mb-1">Best Performer</p>
+                        <p id="best-performer" class="text-2xl font-bold">SOL +5.2%</p>
+                    </div>
+                </div>
+                <div class="col-span-1">
+                    <div class="bg-gray-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 mb-1">Trades Completed</p>
+                        <p id="trade-count" class="text-2xl font-bold">12</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Holdings and Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Holdings Table -->
+            <div class="lg:col-span-1">
+                <div class="card rounded-xl p-6 shadow-lg h-full">
+                    <h3 class="text-xl font-bold mb-4">Your Holdings</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-300">Asset</th>
+                                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-300">Balance</th>
+                                    <th class="px-4 py-3 text-right text-sm font-medium text-gray-300">Value</th>
+                                    <th class="px-4 py-3 text-right text-sm font-medium text-gray-300">24h</th>
+                                </tr>
+                            </thead>
+                            <tbody id="holdings-body" class="divide-y divide-gray-700">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Chart -->
+            <div class="lg:col-span-2">
+                <div class="card rounded-xl p-6 shadow-lg h-full">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold">Portfolio Performance</h3>
+                        <div class="flex">
+                            <button data-timeframe="7d" class="active-timeframe px-3 py-1 text-sm bg-indigo-600 rounded-l-lg">7D</button>
+                            <button data-timeframe="1m" class="px-3 py-1 text-sm bg-gray-700">1M</button>
+                            <button data-timeframe="3m" class="px-3 py-1 text-sm bg-gray-700">3M</button>
+                            <button data-timeframe="1y" class="px-3 py-1 text-sm bg-gray-700 rounded-r-lg">1Y</button>
+                        </div>
+                    </div>
+                    <div class="h-64 sm:h-80">
+                        <canvas id="performance-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trade History -->
+        <div class="card rounded-xl p-6 shadow-lg">
+            <h3 class="text-xl font-bold mb-4">Trade History</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-300">Date</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-300">Type</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-300">Asset</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-300">Amount</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-300">Price</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-300">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trades-body" class="divide-y divide-gray-700">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add a recommendations section -->
+<div class="card rounded-xl p-6 shadow-lg mt-6">
+    <h3 class="text-xl font-bold mb-4">AI Recommendations</h3>
+    <div id="ai-recommendations">
+        <div class="flex justify-center items-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
+            <span class="ml-3">Analyzing your portfolio...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+// Example AI recommendation function
+async function analyzePortfolio(userData) {
+    try {
+        // Convert portfolio to JSON string for URL parameter
+        const portfolioJson = JSON.stringify(userData.portfolio || {});
+        
+        const response = await fetch(`http://localhost:8000/ai/recommendations?portfolio=${encodeURIComponent(portfolioJson)}&balance=${userData.balance}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Check if we got the expected response format
+        if (data.message && data.status) {
+            // This is the root endpoint response, not recommendations
+            console.warn("Got root endpoint response instead of recommendations");
+            return generateDemoRecommendations();
+        }
+        
+        return data;
+    } catch (error) {
+        console.error("Error fetching AI recommendations:", error);
+        // Return demo data if API is unavailable
+        return generateDemoRecommendations();
+    }
+}    
+    // Add event listeners to action buttons
+    container.querySelectorAll('.ai-action-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            executeAIAction(this.dataset.action, this.dataset.symbol);
+        });
+    });
+
+
+// Call this when initializing your portfolio
+generateRecommendations();
+document.addEventListener('DOMContentLoaded', async () => {
+    setupEventListeners();
+    
+    // ... your existing initialization code ...
+    
+    updateUI();
+    loadChartData();
+    generateRecommendations(); // ADD THIS LINE
+});
+</script>
+
+    <!-- Firebase Config -->
+    <script>
+        // Initialize Firebase (replace with your config)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+    </script>
+
+    <!-- Portfolio Script -->
+    <script>
+        // DOM Elements
+        const balanceDisplay = document.getElementById('balance-display');
+        const totalBalance = document.getElementById('total-balance');
+        const profitLoss = document.getElementById('profit-loss');
+        const bestPerformer = document.getElementById('best-performer');
+        const tradeCount = document.getElementById('trade-count');
+        const holdingsBody = document.getElementById('holdings-body');
+        const tradesBody = document.getElementById('trades-body');
+        const resetDemoBtn = document.getElementById('reset-demo');
+        const exportTradesBtn = document.getElementById('export-trades');
+        const chartCtx = document.getElementById('performance-chart').getContext('2d');
+        
+        // Chart instance
+        let performanceChart;
+        
+        // Demo data (will be replaced with real data from Firestore)
+        let demoUser = {
+            balance: 10000,
+            portfolio: {
+                BTC: 0.1,
+                ETH: 2.5,
+                SOL: 15
+            },
+            trades: []
+        };
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', async () => {
+            setupEventListeners();
+            
+            // Load data (in production, replace with real Firestore data)
+            try {
+                const user = auth.currentUser;
+                if (user) {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        demoUser = {
+                            balance: userDoc.data().balance || 10000,
+                            portfolio: userDoc.data().portfolio || {},
+                            trades: userDoc.data().trades || []
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading user data:", error);
+            }
+            
+            // Initialize with demo data (remove in production)
+            if (demoUser.trades.length === 0) {
+                demoUser.trades = generateDemoTrades();
+            }
+            
+            updateUI();
+            loadChartData();
+        });
+
+        function setupEventListeners() {
+            // Timeframe buttons for chart
+            document.querySelectorAll('[data-timeframe]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('[data-timeframe]').forEach(b => {
+                        b.classList.remove('active-timeframe', 'bg-indigo-600');
+                        b.classList.add('bg-gray-700');
+                    });
+                    this.classList.add('active-timeframe', 'bg-indigo-600');
+                    this.classList.remove('bg-gray-700');
+                    loadChartData(this.dataset.timeframe);
+                });
+            });
+
+            // Reset demo button
+            resetDemoBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to reset your demo account? This will clear all trades and reset your balance to $10,000.')) {
+                    try {
+                        const user = auth.currentUser;
+                        demoUser = {
+                            balance: 10000,
+                            portfolio: {},
+                            trades: []
+                        };
+                        
+                        if (user) {
+                            await db.collection('users').doc(user.uid).set(demoUser);
+                        }
+                        
+                        updateUI();
+                        loadChartData();
+                        alert('Demo account has been reset successfully.');
+                    } catch (error) {
+                        console.error("Error resetting demo:", error);
+                        alert('Failed to reset demo account.');
+                    }
+                }
+            });
+
+            // Export trades button
+            exportTradesBtn.addEventListener('click', () => {
+                exportTradesToCSV();
+            });
+        }
+
+        function updateUI() {
+            // Update balance display
+            balanceDisplay.textContent = `$${demoUser.balance.toFixed(2)}`;
+            totalBalance.textContent = `$${(demoUser.balance + calculatePortfolioValue()).toFixed(2)}`;
+            
+            // Update holdings table
+            updateHoldingsTable();
+            
+            // Update trade history
+            updateTradeHistory();
+        }
+
+        function calculatePortfolioValue() {
+            let totalValue = 0;
+            // In production, would fetch live prices from API
+            const currentPrices = {
+                BTC: 40000,
+                ETH: 2200,
+                SOL: 150
+            };
+            
+            for (const [symbol, amount] of Object.entries(demoUser.portfolio)) {
+                if (currentPrices[symbol]) {
+                    totalValue += amount * currentPrices[symbol];
+                }
+            }
+            
+            return totalValue;
+        }
+
+        function updateHoldingsTable() {
+            holdingsBody.innerHTML = '';
+            const currentPrices = {
+                BTC: 40000,
+                ETH: 2200,
+                SOL: 150
+            };
+            const priceChanges24h = {
+                BTC: 2.5,
+                ETH: -1.2,
+                SOL: 5.4
+            };
+            
+            let totalProfitLoss = 0;
+            let topPerformer = { symbol: '', change: 0 };
+            
+            for (const [symbol, amount] of Object.entries(demoUser.portfolio)) {
+                if (amount > 0) {
+                    const value = (currentPrices[symbol] || 0) * amount;
+                    const change = priceChanges24h[symbol] || 0;
+                    totalProfitLoss += value * (change / 100);
+                    
+                    if (Math.abs(change) > Math.abs(topPerformer.change)) {
+                        topPerformer = { symbol: symbol, change: change };
+                    }
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="ml-2">
+                                    <div class="font-medium">${symbol}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            ${amount.toFixed(4)}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                            $${value.toFixed(2)}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right ${change >= 0 ? 'text-green-400' : 'text-red-400'}">
+                            ${change >= 0 ? '+' : ''}${change.toFixed(2)}%
+                        </td>
+                    `;
+                    holdingsBody.appendChild(row);
+                }
+            }
+            
+            // Update profit/loss display
+            const totalValue = demoUser.balance + calculatePortfolioValue();
+            const profitPercent = (totalProfitLoss / totalValue * 100).toFixed(2);
+            profitLoss.textContent = `${totalProfitLoss >= 0 ? '+' : ''}$${Math.abs(totalProfitLoss).toFixed(2)} (${profitPercent}%)`;
+            profitLoss.className = `text-2xl font-bold ${totalProfitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`;
+            
+            // Update best performer
+            if (topPerformer.symbol) {
+                bestPerformer.textContent = `${topPerformer.symbol} ${topPerformer.change >= 0 ? '+' : ''}${topPerformer.change.toFixed(1)}%`;
+                bestPerformer.className = `text-2xl font-bold ${topPerformer.change >= 0 ? 'text-green-400' : 'text-red-400'}`;
+            }
+            
+            // Update trade count
+            tradeCount.textContent = demoUser.trades.length;
+        }
+
+        function updateTradeHistory() {
+            tradesBody.innerHTML = '';
+            
+            // Sort trades by date (newest first)
+            const sortedTrades = [...demoUser.trades].sort((a, b) => {
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
+            
+            sortedTrades.forEach(trade => {
+                const date = new Date(trade.timestamp);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                const totalValue = trade.amount * trade.price;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        ${formattedDate}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="px-2 py-1 rounded-full text-xs ${trade.action === 'buy' ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}">
+                            ${trade.action.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        ${trade.symbol}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right">
+                        ${trade.amount.toFixed(6)}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right">
+                        $${trade.price.toFixed(2)}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right">
+                        $${totalValue.toFixed(2)}
+                    </td>
+                `;
+                tradesBody.appendChild(row);
+            });
+        }
+
+        function loadChartData(timeframe = '7d') {
+            // In production, fetch historical data from API based on timeframe
+            const mockData = generateMockChartData(timeframe);
+            
+            // Destroy previous chart if exists
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+            
+            // Create new chart
+            performanceChart = new Chart(chartCtx, {
+                type: 'line',
+                data: {
+                    labels: mockData.labels,
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: mockData.values,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.6)'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.6)',
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateMockChartData(timeframe) {
+            const dataPoints = timeframe === '7d' ? 7 : timeframe === '1m' ? 30 : timeframe === '3m' ? 12 : 12;
+            const labels = [];
+            const values = [];
+            let value = 8500;
+            
+            for (let i = 0; i < dataPoints; i++) {
+                if (timeframe === '1y') {
+                    labels.push(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]);
+                } else {
+                    labels.push(`Day ${i+1}`);
+                }
+                
+                // Simulate market fluctuations
+                value += (Math.random() - 0.45) * value * 0.05;
+                values.push(Math.max(8000, value));
+            }
+            
+            return { labels, values };
+        }
+
+        function exportTradesToCSV() {
+            if (demoUser.trades.length === 0) {
+                alert('No trades to export.');
+                return;
+            }
+            
+            // Create CSV content
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Date,Type,Asset,Amount,Price,Total Value\n";
+            
+            demoUser.trades.forEach(trade => {
+                const date = new Date(trade.timestamp).toISOString();
+                const totalValue = trade.amount * trade.price;
+                csvContent += `${date},${trade.action},${trade.symbol},${trade.amount},${trade.price},${totalValue}\n`;
+            });
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "crypto-trades-export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // For demo purposes - generate sample trades
+        function generateDemoTrades() {
+            const trades = [];
+            const coins = ['BTC', 'ETH', 'SOL'];
+            const now = new Date();
+            
+            for (let i = 0; i < 12; i++) {
+                const daysAgo = 30 - (i * 2.5);
+                const tradeDate = new Date(now);
+                tradeDate.setDate(now.getDate() - daysAgo);
+                
+                const coin = coins[Math.floor(Math.random() * coins.length)];
+                const action = Math.random() > 0.5 ? 'buy' : 'sell';
+                const price = coin === 'BTC' ? 38000 + Math.random() * 4000 : 
+                              coin === 'ETH' ? 2000 + Math.random() * 400 : 
+                              100 + Math.random() * 50;
+                const amount = coin === 'BTC' ? 0.001 + Math.random() * 0.01 : 
+                               coin === 'ETH' ? 0.1 + Math.random() * 0.5 : 
+                               1 + Math.random() * 5;
+                
+                trades.push({
+                    symbol: coin,
+                    action: action,
+                    amount: parseFloat(amount.toFixed(6)),
+                    price: parseFloat(price.toFixed(2)),
+                    timestamp: tradeDate.toISOString()
+                });
+            }
+            
+            return trades;
+        }
+    </script>
+</body>
+</html>

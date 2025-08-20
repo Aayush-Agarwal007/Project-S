@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Trading Demo | Virtual Portfolio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for price charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        
+        .card-glass {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg">
+    <!-- Navigation -->
+    <nav class="bg-gray-800/50 backdrop-blur-md shadow-lg fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 to-purple-400">
+                            CryptoAI Demo
+                        </span>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-10 flex items-baseline space-x-4">
+                            <a href="index.html" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Home</a>
+                            <a href="market.html" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Market</a>
+                            <a href="demo.html" class="px-3 py-2 rounded-md text-sm font-medium bg-gray-700 text-white">Demo Trading</a>
+                            <a href="portfolio.html" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Portfolio</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-white px-3 py-1 bg-indigo-600 rounded-lg">
+                        $<span id="balance-value">10,000.00</span>
+                    </div>
+                    <button id="dark-mode-toggle" class="p-1 rounded-full text-gray-400 hover:text-white focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column: Market Data and Trading -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Market Overview -->
+                <div class="card-glass rounded-xl p-6 shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                        Market Overview
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Coin</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Price</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">24h</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Market Cap</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="market-data" class="divide-y divide-gray-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Price Chart -->
+                <div class="card-glass rounded-xl p-6 shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <span id="chart-title">BTC/USD</span>
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button data-timeframe="1h" class="timeframe-btn px-3 py-1 text-xs rounded-lg bg-gray-700">1h</button>
+                            <button data-timeframe="24h" class="timeframe-btn px-3 py-1 text-xs rounded-lg bg-gray-700">24h</button>
+                            <button data-timeframe="7d" class="timeframe-btn px-3 py-1 text-xs rounded-lg bg-gray-700">7d</button>
+                            <button data-timeframe="30d" class="timeframe-btn active-timeframe px-3 py-1 text-xs rounded-lg bg-indigo-600">30d</button>
+                        </div>
+                    </div>
+                    <div class="h-80">
+                        <canvas id="price-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: AI Insights and Portfolio -->
+            <div class="space-y-6">
+                <!-- AI Recommendations -->
+                <div class="card-glass rounded-xl p-6 shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        AI Insights
+                    </h2>
+                    <div class="space-y-4" id="ai-insights">
+                        <div class="p-4 bg-gray-800/50 rounded-lg">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-medium text-indigo-300">Recommended Buy</h3>
+                                    <p class="mt-1 text-gray-300">Based on market trends and technical analysis, Bitcoin (BTC) shows strong bullish signals with potential for 15-20% upside in the next 30 days.</p>
+                                    <div class="mt-2 flex justify-between items-center">
+                                        <span class="text-sm text-green-400">Confidence: 82%</span>
+                                        <button class="btn-success px-3 py-1 rounded-lg text-sm font-medium">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-gray-800/50 rounded-lg">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="h-10 w-10 rounded-full bg-yellow-500 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-medium text-yellow-300">Caution Recommended</h3>
+                                    <p class="mt-1 text-gray-300">Market volatility indicators suggest potential upcoming turbulence. Consider reducing positions in high-risk assets like meme coins.</p>
+                                    <div class="mt-2 flex justify-between items-center">
+                                        <span class="text-sm text-yellow-400">Confidence: 67%</span>
+                                        <button class="btn-primary px-3 py-1 rounded-lg text-sm font-medium">Monitor List</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Summary -->
+                <div class="card-glass rounded-xl p-6 shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Your Portfolio
+                    </h2>
+                    <div class="space-y-4" id="portfolio-summary">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Available Balance:</span>
+                            <span id="portfolio-balance" class="font-bold">$9,827.45</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Total Invested:</span>
+                            <span id="portfolio-invested" class="font-bold">$1,724.83</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400">Profit/Loss:</span>
+                            <span id="portfolio-profit" class="font-bold text-green-400">+$284.91 (3.2%)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h3 class="font-medium mb-2">Your Holdings:</h3>
+                        <div class="space-y-3" id="portfolio-holdings">
+                            <div class="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
+                                <div>
+                                    <span class="font-medium">BTC</span>
+                                    <span class="block text-xs text-gray-400">0.0274 BTC</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="block font-medium">$1,124.83</span>
+                                    <span class="block text-xs text-green-400">+12.4%</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
+                                <div>
+                                    <span class="font-medium">ETH</span>
+                                    <span class="block text-xs text-gray-400">1.85 ETH</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="block font-medium">$600.00</span>
+                                    <span class="block text-xs text-red-400">-2.1%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="reset-demo" class="w-full mt-4 btn-danger py-2 rounded-lg font-medium">
+                        Reset Demo Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trade Modal -->
+    <div id="trade-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md relative">
+            <button id="close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h3 id="modal-title" class="text-2xl font-bold mb-4">Buy Bitcoin (BTC)</h3>
+            
+            <div class="space-y-4">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Current Price:</span>
+                    <span id="current-price" class="font-medium">$41,256.78</span>
+                </div>
+                
+                <div>
+                    <label for="trade-amount" class="block text-sm font-medium text-gray-300 mb-1">Amount</label>
+                    <div class="relative">
+                        <input type="number" id="trade-amount" min="0" step="0.000001" class="w-full bg-gray-700 rounded-lg py-2 px-3 text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Enter amount">
+                        <div class="absolute right-3 top-2 text-gray-400">
+                            <span id="coin-symbol">BTC</span>
+                        </div>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-400">Min: 0.001 <span id="min-symbol">BTC</span></p>
+                </div>
+                
+                <div>
+                    <!-- <label for="trade-total" class="block text-sm font-medium text-gray-300 mb-1">Total Cost</label> -->
+                   <div class="mb-4">
+    <label for="trade-total" class="block text-sm font-medium text-gray-300 mb-1">Total Cost</label>
+    <div class="relative">
+        <input type="text" id="trade-total" readonly class="w-full bg-gray-800 rounded-lg py-2 px-3 text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Total Value">
+        <div class="absolute right-3 top-2 text-gray-400">USD</div>
+    </div>
+</div>
+
+                </div>
+                
+                <div id="error-message" class="text-red-400 text-sm hidden"></div>
+                
+                <button id="confirm-trade" class="w-full py-3 rounded-lg font-bold text-white btn-primary mt-4">
+                    Confirm Buy
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backend Scripts -->
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        
+        // Demo Trade Data
+        let demoUser = {
+            balance: 10000,
+            portfolio: {
+                BTC: 0.0274,
+                ETH: 1.85
+            },
+            trades: []
+        };
+        
+        // Current trading context
+        let currentTrade = {
+            symbol: '',
+            price: 0,
+            action: 'buy'
+        };
+        
+        // DOM Elements
+        const marketData = document.getElementById('market-data');
+        const priceChartCtx = document.getElementById('price-chart').getContext('2d');
+        let priceChart;
+        const balanceValue = document.getElementById('balance-value');
+        const modal = document.getElementById('trade-modal');
+        const closeModal = document.getElementById('close-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const currentPrice = document.getElementById('current-price');
+        const tradeAmount = document.getElementById('trade-amount');
+        const tradeTotal = document.getElementById('trade-total');
+        const coinSymbol = document.getElementById('coin-symbol');
+        const minSymbol = document.getElementById('min-symbol');
+        const confirmTrade = document.getElementById('confirm-trade');
+        const errorMessage = document.getElementById('error-message');
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            loadMarketData();
+            loadPortfolioSummary();
+            
+            // Initialize chart with BTC data by default
+            loadChartData('bitcoin', '30d');
+        });
+        
+        function setupEventListeners() {
+            // Timeframe buttons
+            document.querySelectorAll('.timeframe-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active-timeframe'));
+                    this.classList.add('active-timeframe');
+                    const symbol = document.getElementById('chart-title').textContent.split('/')[0].toLowerCase();
+                    loadChartData(symbol, this.dataset.timeframe);
+                });
+            });
+            
+            // Trade amount calculation
+            tradeAmount.addEventListener('input', calculateTradeTotal);
+            
+            // Modal controls
+            closeModal.addEventListener('click', closeTradeModal);
+            
+            // Confirm trade
+            confirmTrade.addEventListener('click', executeTrade);
+            
+            // Reset demo account
+            document.getElementById('reset-demo').addEventListener('click', resetDemoAccount);
+        }
+        
+        function loadMarketData() {
+            // Fetch from CoinGecko API
+            fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h')
+                .then(response => response.json())
+                .then(data => {
+                    marketData.innerHTML = '';
+                    data.forEach(coin => {
+                        const priceChange = coin.price_change_percentage_24h;
+                        const changeClass = priceChange >= 0 ? 'text-green-400' : 'text-red-400';
+                        const changeIcon = priceChange >= 0 ? '↑' : '↓';
+                        
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-700/50 cursor-pointer';
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <img src="${coin.image}" alt="${coin.name}" class="h-8 w-8 rounded-full mr-3">
+                                    <div>
+                                        <div class="font-medium">${coin.name}</div>
+                                        <div class="text-gray-400 text-sm">${coin.symbol.toUpperCase()}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                $${coin.current_price.toLocaleString()}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap ${changeClass}">
+                                ${changeIcon} ${Math.abs(priceChange).toFixed(2)}%
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                $${(coin.market_cap / 1000000000).toFixed(2)}B
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button class="btn-success px-3 py-1 rounded-lg mr-2 trade-btn" data-symbol="${coin.id}" data-action="buy">Buy</button>
+                                <button class="btn-danger px-3 py-1 rounded-lg trade-btn" data-symbol="${coin.id}" data-action="sell">Sell</button>
+                            </td>
+                        `;
+                        marketData.appendChild(row);
+                    });
+                    
+                    // Add click handlers to all trade buttons
+                    document.querySelectorAll('.trade-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            openTradeModal(this.dataset.symbol, this.dataset.action, this.dataset.price);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching market data:', error);
+                });
+        }
+        
+        function loadChartData(symbol, timeframe) {
+            // For demo purposes, we'll mock this with some sample data
+            // In a real app, you would fetch historical data from an API like CoinGecko
+            
+            let labels = [];
+            let dataPoints = [];
+            let days = 30;
+            let price = 40000;
+            
+            if (timeframe === '1h') {
+                days = 1;
+                price = 41000;
+            } else if (timeframe === '24h') {
+                days = 1;
+                price = 40250;
+            } else if (timeframe === '7d') {
+                days = 7;
+                price = 38000;
+            }
+            
+            // Generate mock data
+            for (let i = 0; i < 24 * days; i++) {
+                if (i % Math.floor(Math.random() * 6) === 0) {
+                    const change = Math.random() > 0.5 ? 1 : -1;
+                    price += Math.random() * 200 * change;
+                }
+                dataPoints.push(price);
+                labels.push(i);
+            }
+            
+            // Update chart title
+            document.getElementById('chart-title').textContent = `${symbol.toUpperCase()}/USD`;
+            
+            // Destroy previous chart if it exists
+            if (priceChart) {
+                priceChart.destroy();
+            }
+            
+            // Create new chart
+            priceChart = new Chart(priceChartCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Price',
+                        data: dataPoints,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.6)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function loadPortfolioSummary() {
+            // In a real app, this would come from Firestore
+            // For demo, we're using the demoUser object
+            
+            // Calculate portfolio value
+            const portfolio = demoUser.portfolio;
+            let totalValue = 0;
+            
+            // In a real app, you would fetch current prices
+            const prices = {
+                BTC: 40000,
+                ETH: 2200
+            };
+            
+            for (const [symbol, amount] of Object.entries(portfolio)) {
+                if (symbol in prices) {
+                    totalValue += amount * prices[symbol];
+                }
+            }
+            
+            // Update UI
+            document.getElementById('portfolio-balance').textContent = `$${demoUser.balance.toFixed(2)}`;
+            document.getElementById('portfolio-invested').textContent = `$${totalValue.toFixed(2)}`;
+            
+            // Calculate profit (for demo, we'll assume we bought at slightly lower prices)
+            const initialValue = totalValue * 0.95; // Simulate 5% profit
+            const profit = totalValue - initialValue;
+            const profitPercent = (profit / initialValue * 100).toFixed(2);
+            
+            const profitElement = document.getElementById('portfolio-profit');
+            profitElement.textContent = `${profit >= 0 ? '+' : ''}$${profit.toFixed(2)} (${profitPercent}%)`;
+            profitElement.className = profit >= 0 ? 'font-bold text-green-400' : 'font-bold text-red-400';
+            
+            // Update holdings list
+            const holdingsContainer = document.getElementById('portfolio-holdings');
+            holdingsContainer.innerHTML = '';
+            
+            for (const [symbol, amount] of Object.entries(portfolio)) {
+                if (amount > 0 && symbol in prices) {
+                    const value = amount * prices[symbol];
+                    const coinProfit = value * 0.05; // Simulate 5% profit for demo
+                    const coinProfitPercent = '5.00';
+                    const isProfit = coinProfit >= 0;
+                    
+                    const holdingDiv = document.createElement('div');
+                    holdingDiv.className = 'flex justify-between items-center p-3 bg-gray-800/30 rounded-lg';
+                    holdingDiv.innerHTML = `
+                        <div>
+                            <span class="font-medium">${symbol}</span>
+                            <span class="block text-xs text-gray-400">${amount.toFixed(4)} ${symbol}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="block font-medium">$${value.toFixed(2)}</span>
+                            <span class="block text-xs ${isProfit ? 'text-green-400' : 'text-red-400'}">
+                                ${isProfit ? '+' : ''}${coinProfitPercent}%
+                            </span>
+                        </div>
+                    `;
+                    holdingsContainer.appendChild(holdingDiv);
+                }
+            }
+        }
+        
+        function openTradeModal(symbol, action, price) {
+            // Set current trade context
+            currentTrade.symbol = symbol;
+            currentTrade.action = action;
+            currentTrade.price = price || 40000; // Default price for demo
+            
+            // Update modal UI
+            modalTitle.textContent = `${action === 'buy' ? 'Buy' : 'Sell'} ${symbol.toUpperCase()}`;
+            currentPrice.textContent = `$${currentTrade.price.toLocaleString()}`;
+            coinSymbol.textContent = symbol.toUpperCase();
+            minSymbol.textContent = symbol.toUpperCase();
+            
+            // Reset inputs
+            tradeAmount.value = '';
+            tradeTotal.value = '';
+            errorMessage.classList.add('hidden');
+            
+            // Update confirm button
+            confirmTrade.textContent = `${action === 'buy' ? 'Buy' : 'Sell'} ${symbol.toUpperCase()}`;
+            confirmTrade.className = `w-full py-3 rounded-lg font-bold text-white ${action === 'buy' ? 'btn-success' : 'btn-danger'} mt-4`;
+            
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+        
+        function closeTradeModal() {
+            modal.classList.add('hidden');
+        }
+        
+        function calculateTradeTotal() {
+            const amount = parseFloat(tradeAmount.value);
+            if (isNaN(amount) || amount <= 0) {
+                tradeTotal.value = '';
+                return;
+            }
+            
+            const total = amount * currentTrade.price;
+            tradeTotal.value = `$${total.toFixed(2)}`;
+        }
+        
+        function executeTrade() {
+            const amount = parseFloat(tradeAmount.value);
+            
+            // Validate
+            if (isNaN(amount) || amount <= 0) {
+                errorMessage.textContent = 'Please enter a valid amount';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            
+            const totalCost = amount * currentTrade.price;
+            
+            if (currentTrade.action === 'buy' && totalCost > demoUser.balance) {
+                errorMessage.textContent = 'Insufficient balance for this trade';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            
+            if (currentTrade.action === 'sell' && (!demoUser.portfolio[currentTrade.symbol] || demoUser.portfolio[currentTrade.symbol] < amount)) {
+                errorMessage.textContent = `You don't have enough ${currentTrade.symbol} to sell`;
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            
+            // Execute the trade
+            if (currentTrade.action === 'buy') {
+                // Add to portfolio (or increase existing holding)
+                if (!demoUser.portfolio[currentTrade.symbol]) {
+                    demoUser.portfolio[currentTrade.symbol] = 0;
+                }
+                demoUser.portfolio[currentTrade.symbol] += amount;
+                demoUser.balance -= totalCost;
+            } else {
+                // Sell from portfolio
+                demoUser.portfolio[currentTrade.symbol] -= amount;
+                demoUser.balance += totalCost;
+                
+                // If holding is now zero, remove from portfolio
+                if (demoUser.portfolio[currentTrade.symbol] <= 0) {
+                    delete demoUser.portfolio[currentTrade.symbol];
+                }
+            }
+            
+            // Record the trade
+            demoUser.trades.push({
+                symbol: currentTrade.symbol,
+                action: currentTrade.action,
+                amount: amount,
+                price: currentTrade.price,
+                timestamp: new Date()
+            });
+            
+            // Update UI
+            balanceValue.textContent = demoUser.balance.toFixed(2);
+            loadPortfolioSummary();
+            closeTradeModal();
+            
+            // Show success notification
+            alert(`Successfully ${currentTrade.action === 'buy' ? 'bought' : 'sold'} ${amount} ${currentTrade.symbol} for $${totalCost.toFixed(2)}`);
+            
+            // In a real app, save to Firestore
+            const user = auth.currentUser;
+            if (user) {
+                db.collection('users').doc(user.uid).set({
+                    balance: demoUser.balance,
+                    portfolio: demoUser.portfolio,
+                    trades: firebase.firestore.FieldValue.arrayUnion(demoUser.trades[demoUser.trades.length - 1])
+                }, { merge: true });
+            }
+        }
+        
+        function resetDemoAccount() {
+            if (confirm('Are you sure you want to reset your demo account? This will clear all your trades and reset your balance to $10,000.')) {
+                demoUser = {
+                    balance: 10000,
+                    portfolio: {},
+                    trades: []
+                };
+                
+                // Update UI
+                balanceValue.textContent = demoUser.balance.toFixed(2);
+                loadPortfolioSummary();
+                
+                // In a real app, save to Firestore
+                const user = auth.currentUser;
+                if (user) {
+                    db.collection('users').doc(user.uid).set({
+                        balance: demoUser.balance,
+                        portfolio: demoUser.portfolio,
+                        trades: []
+                    });
+                }
+                
+                alert('Demo account has been reset to its initial state.');
+            }
+        }
+        
+        // In a real app, you would have Firebase auth state observer
+        // to handle user login/logout and data syncing
+    </script>
+</body>
+</html>
