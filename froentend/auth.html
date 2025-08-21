@@ -7,7 +7,6 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-messaging-compat.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -125,88 +124,6 @@
             text-align: center;
             display: none;
         }
-        /* Add this to your existing style tags in all HTML files */
-
-/* Notification styles */
-.fixed {
-  position: fixed;
-}
-
-.top-4 {
-  top: 1rem;
-}
-
-.right-4 {
-  right: 1rem;
-}
-
-.z-50 {
-  z-index: 50;
-}
-
-.bg-green-100 {
-  background-color: #dcfce7;
-}
-
-.bg-red-100 {
-  background-color: #fee2e2;
-}
-
-.border-green-500 {
-  border-color: #22c55e;
-}
-
-.border-red-500 {
-  border-color: #ef4444;
-}
-
-.border-l-4 {
-  border-left-width: 4px;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
-.shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.items-start {
-  align-items: flex-start;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-}
-
-.mt-1 {
-  margin-top: 0.25rem;
-}
-
-.text-gray-500 {
-  color: #6b7280;
-}
-
-.hover\:text-gray-700:hover {
-  color: #374151;
-}
     </style>
 </head>
 <body>
@@ -231,8 +148,12 @@
                 <button type="submit" id="signin-button">Sign In</button>
             </form>
             <div class="auth-toggle">
-                Don't have an account? <a href="#" id="show-signup">Sign Up</a>
-            </div>
+   <p>
+    Don't have an account? <a href="#" id="show-signup">Sign Up</a> 
+    <span id="user-initials" style="display:none; font-weight:bold; margin-left:10px; cursor:pointer;"></span>
+</p>
+
+</div>
         </div>
         
         <div id="sign-up-form" style="display: none;">
@@ -401,47 +322,36 @@
         });
         
         // Listen for auth state changes
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                console.log('User logged in:', user.email);
-            } else {
-                console.log('User logged out');
-            }
-        });
-        // Add this code at the bottom of your existing auth.html script
+      // Listen for auth state changes
+auth.onAuthStateChanged((user) => {
+    const signupLink = document.getElementById('show-signup');
+    const initialsSpan = document.getElementById('user-initials');
 
-// Request notification permission
-function requestNotificationPermission() {
-  Notification.requestPermission().then((permission) => {
-    if (permission === 'granted') {
-      console.log('Notification permission granted');
-      getFCMToken();
+    if (user) {
+        console.log('User logged in:', user.email);
+
+        // Get initials from email (before @) or from displayName
+        let initials = user.email.charAt(0).toUpperCase();
+        if (user.displayName) {
+            initials = user.displayName.split(' ').map(n => n[0]).join('').toUpperCase();
+        }
+
+        // Hide "Sign Up", show initials
+        if (signupLink) signupLink.style.display = 'none';
+        initialsSpan.textContent = initials;
+        initialsSpan.style.display = 'inline-block';
+    } else {
+        console.log('User logged out');
+
+        // Show "Sign Up" back, hide initials
+        if (signupLink) signupLink.style.display = 'inline';
+        initialsSpan.style.display = 'none';
     }
-  });
-}
-
-// Get FCM token
-function getFCMToken() {
-  const messaging = firebase.messaging();
-  messaging.getToken({vapidKey: "YOUR_VAPID_KEY_HERE"}).then((currentToken) => {
-    if (currentToken) {
-      // Save token to user's profile in Firestore
-      const user = firebase.auth().currentUser;
-      if (user) {
-        firebase.firestore().collection('users').doc(user.uid).set({
-          fcmToken: currentToken
-        }, { merge: true });
-      }
-    }
-  });
-}
-
-// Call this when user logs in
-firebase.auth().onAuthStateChanged((user) => {
-  if (user) {
-    requestNotificationPermission();
-  }
 });
+document.getElementById('user-initials').addEventListener('click', () => {
+    auth.signOut();
+});
+
     </script>
 </body>
 </html>

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CryptoSense-AI | Your Financial Guidance Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-messaging-compat.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -35,88 +34,6 @@
             50% { content: '..'; }
             100% { content: '...'; }
         }
-        /* Add this to your existing style tags in all HTML files */
-
-/* Notification styles */
-.fixed {
-  position: fixed;
-}
-
-.top-4 {
-  top: 1rem;
-}
-
-.right-4 {
-  right: 1rem;
-}
-
-.z-50 {
-  z-index: 50;
-}
-
-.bg-green-100 {
-  background-color: #dcfce7;
-}
-
-.bg-red-100 {
-  background-color: #fee2e2;
-}
-
-.border-green-500 {
-  border-color: #22c55e;
-}
-
-.border-red-500 {
-  border-color: #ef4444;
-}
-
-.border-l-4 {
-  border-left-width: 4px;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
-.shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.items-start {
-  align-items: flex-start;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-}
-
-.mt-1 {
-  margin-top: 0.25rem;
-}
-
-.text-gray-500 {
-  color: #6b7280;
-}
-
-.hover\:text-gray-700:hover {
-  color: #374151;
-}
     </style>
 </head>
 <body class="bg-gray-50">
@@ -145,7 +62,11 @@
                     <h2 class="text-4xl font-bold mb-4">Your Personal Finance & Crypto Advisor</h2>
                     <p class="text-xl mb-6">Novice-friendly guidance on stocks, cryptocurrencies and financial planning from our AI assistant.</p>
                     <div class="flex space-x-4">
-                        <button class="px-6 py-3 bg-white text-finance-blue rounded-md font-semibold hover:bg-gray-100 transition">Start Learning</button>
+                      <button class="px-6 py-3 bg-white text-finance-blue rounded-md font-semibold hover:bg-gray-100 transition"
+        onclick="window.scrollBy({ top: window.innerHeight, behavior: 'smooth' })">
+    Start Learning
+</button>
+
                         <button class="px-6 py-3 border-2 border-white rounded-md font-semibold hover:bg-white hover:text-finance-blue transition">Ask Questions</button>
                     </div>
                 </div>
@@ -213,7 +134,12 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-3">Beginner Guides</h3>
+                   <a href="beginner-guide.html" class="hover:text-crypto-purple">
+    <h3 class="text-xl font-semibold mb-3">Beginner Guides</h3>
+</a>
+
+
+
                     <p class="text-gray-600">Step-by-step explanations of financial concepts tailored for newcomers.</p>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
@@ -286,11 +212,21 @@
             <div class="border-t border-gray-700 mt-8 pt-8 text-sm text-gray-400">
                 <div class="flex flex-col md:flex-row justify-between items-center">
                     <p>© 2023 CryptoSense-AI. All rights reserved.</p>
-                    <div class="flex space-x-6 mt-4 md:mt-0">
-                        <a href="#"><img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/1aae802d-ac09-4528-8c37-0b4f8a312189.png" alt="Twitter social media icon" /></a>
-                        <a href="#"><img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/88976524-9252-40f8-849c-de3a2a26563f.png" alt="LinkedIn social media icon" /></a>
-                        <a href="#"><img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/2f315cd2-e860-406a-9532-e6e142fd2d14.png" alt="Facebook social media icon" /></a>
-                    </div>
+                 <div class="flex items-center space-x-4 mt-4 md:mt-0">
+    <span class="text-gray-400 text-sm">Connect with us:</span>
+    <a href="https://twitter.com/yourprofile" target="_blank">
+        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/1aae802d-ac09-4528-8c37-0b4f8a312189.png" alt="Twitter" class="h-6 w-6" />
+    </a>
+    <a href="https://www.linkedin.com/in/yourprofile" target="_blank">
+        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/88976524-9252-40f8-849c-de3a2a26563f.png" alt="LinkedIn" class="h-6 w-6" />
+    </a>
+    <a href="https://www.facebook.com/yourprofile" target="_blank">
+        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/2f315cd2-e860-406a-9532-e6e142fd2d14.png" alt="Facebook" class="h-6 w-6" />
+    </a>
+</div>
+
+
+
                 </div>
             </div>
         </div>
@@ -299,16 +235,6 @@
     <!-- Intercom Integration Script -->
      <!-- Intercom Settings -->
 <script>
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCOFndrtqX-ZLDlbpT9SI2k7P78EllP9LI",
-  authDomain: "project-s-8b77b.firebaseapp.com",
-  projectId: "project-s-8b77b",
-  storageBucket: "project-s-8b77b.firebasestorage.app",
-  messagingSenderId: "915091110149",
-  appId: "1:915091110149:web:8c7625e10c00f379819f6c",
-  measurementId: "G-V8F7Z59X07"
-};
   window.intercomSettings = {
     app_id: "dtp9l5l6",   // Replace with your real app_id
     api_base: "https://api-iam.intercom.io"
@@ -337,6 +263,19 @@ const firebaseConfig = {
     }
   })();
 </script>
+<script>
+    // Wait until DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatButton = document.getElementById('activate-chat');
+        chatButton.addEventListener('click', function() {
+            // Open Intercom chat
+            if (window.Intercom) {
+                Intercom('show');
+            }
+        });
+    });
+</script>
+
 
     
 </body>
