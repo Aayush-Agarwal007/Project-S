@@ -1,14 +1,22 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 import requests
 import json
+import os
 from typing import List, Dict, Any
 import time
 import random
 
+# Load environment variables
+load_dotenv()
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# API Keys from environment
+NEWS_API_KEY = os.getenv('NEWS_API_KEY', '')
 
 # Binance API base URL
 BINANCE_API_BASE = "https://api.binance.com/api/v3"
@@ -198,5 +206,23 @@ def get_ai_recommendations():
     except json.JSONDecodeError:
         return jsonify({"error": "Invalid portfolio data"}), 400
 
+@app.route('/api/news')
+def get_crypto_news():
+    """Endpoint to fetch crypto news from News API"""
+    if not NEWS_API_KEY:
+        return jsonify({"error": "News API key not configured"}), 500
+    
+    try:
+        url = f"https://newsapi.org/v2/everything?q=cryptocurrency&sortBy=publishedAt&pageSize=20&apiKey={NEWS_API_KEY}"
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        return jsonify(data)
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching news: {e}")
+        return jsonify({"error": "Failed to fetch news"}), 500
+
 if __name__ == '__main__':
+    print("Starting CryptoSense AI Backend...")
+    print(f"News API configured: {'Yes' if NEWS_API_KEY else 'No'}")
     app.run(debug=True, port=8000)

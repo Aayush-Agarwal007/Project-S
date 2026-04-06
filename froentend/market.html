@@ -3,390 +3,536 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crypto Market Dashboard</title>
+  <title>Markets - CryptoSense AI</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-messaging-compat.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+    
+    * { font-family: 'Space Grotesk', sans-serif; }
+    
     body {
-      background-color: #0f172a;
-      color: #e2e8f0;
-      font-family: 'Inter', sans-serif;
+      background: #030014;
+      color: #E2E8F0;
     }
-    .table-header {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
     }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
     .table-row:hover {
-      background-color: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.05);
     }
-    .positive-change {
-      color: #4ade80;
+    
+    .positive-change { color: #10B981; }
+    .negative-change { color: #EF4444; }
+    
+    .nav-item:hover, .nav-item.active {
+      background: rgba(139, 92, 246, 0.2);
+      border-left-color: #8B5CF6;
     }
-    .negative-change {
-      color: #f87171;
-    }
+    
     .loading-spinner {
       border: 4px solid rgba(255, 255, 255, 0.1);
       border-radius: 50%;
-      border-top: 4px solid #6366f1;
+      border-top: 4px solid #8B5CF6;
       width: 40px;
       height: 40px;
       animation: spin 1s linear infinite;
     }
+    
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    .chart-container {
-      height: 300px;
+    
+    /* Market Heatmap */
+    .heatmap-cell {
+      transition: all 0.3s ease;
+      cursor: pointer;
     }
-    /* Add this to your existing style tags in all HTML files */
-
-/* Notification styles */
-.fixed {
-  position: fixed;
-}
-
-.top-4 {
-  top: 1rem;
-}
-
-.right-4 {
-  right: 1rem;
-}
-
-.z-50 {
-  z-index: 50;
-}
-
-.bg-green-100 {
-  background-color: #dcfce7;
-}
-
-.bg-red-100 {
-  background-color: #fee2e2;
-}
-
-.border-green-500 {
-  border-color: #22c55e;
-}
-
-.border-red-500 {
-  border-color: #ef4444;
-}
-
-.border-l-4 {
-  border-left-width: 4px;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
-.shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.items-start {
-  align-items: flex-start;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-}
-
-.mt-1 {
-  margin-top: 0.25rem;
-}
-
-.text-gray-500 {
-  color: #6b7280;
-}
-
-.hover\:text-gray-700:hover {
-  color: #374151;
-}
+    
+    .heatmap-cell:hover {
+      transform: scale(1.05);
+      z-index: 10;
+    }
+    
+    .input-field {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .input-field:focus {
+      border-color: #8B5CF6;
+      outline: none;
+    }
   </style>
 </head>
 <body class="min-h-screen">
-
-  <!-- Navbar -->
-  <nav class="bg-purple-700 text-white shadow-lg">
-    <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-      <h1 class="text-2xl font-bold">CryptoDash</h1>
-      <ul class="flex space-x-6">
-        <li><a href="index.html" class="hover:text-gray-200">Home</a></li>
-        <li><a href="market.html" class="font-semibold underline">Market</a></li>
-        <li><a href="news.html" class="hover:text-gray-200">News</a></li>
-      </ul>
-    </div>
-  </nav>
-
-  <!-- Market Data Section -->
-  <section class="container mx-auto px-6 py-10">
-    <h2 class="text-3xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-500">
-      Crypto Market Dashboard
-    </h2>
-
-    <!-- Crypto Selection -->
-    <div class="mb-8">
-      <label for="crypto-select" class="block mb-2 text-gray-300">Select Cryptocurrency:</label>
-      <select id="crypto-select" class="bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2">
-        <option value="BTCUSDT">Bitcoin (BTC)</option>
-        <option value="ETHUSDT">Ethereum (ETH)</option>
-        <option value="BNBUSDT">Binance Coin (BNB)</option>
-        <option value="SOLUSDT">Solana (SOL)</option>
-        <option value="ADAUSDT">Cardano (ADA)</option>
-        <option value="XRPUSDT">Ripple (XRP)</option>
-      </select>
-    </div>
-
-    <!-- Price Chart -->
-    <div class="bg-gray-800 rounded-lg p-4 mb-8">
-      <div class="chart-container">
-        <canvas id="price-chart"></canvas>
-      </div>
-    </div>
-
-    <!-- Market Data Table -->
-    <div class="overflow-x-auto bg-gray-800 shadow-md rounded-lg mb-8">
-      <table class="min-w-full border-collapse">
-        <thead class="table-header text-white">
-          <tr>
-            <th class="px-6 py-3 text-left">Symbol</th>
-            <th class="px-6 py-3 text-left">Price</th>
-            <th class="px-6 py-3 text-left">24h Change</th>
-            <th class="px-6 py-3 text-left">24h Volume</th>
-            <th class="px-6 py-3 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="crypto-table" class="divide-y divide-gray-700">
-          <!-- Data will load here -->
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Loading State -->
-    <div id="loading" class="flex justify-center items-center py-12">
-      <div class="loading-spinner"></div>
-      <span class="ml-3 text-lg">Loading market data...</span>
-    </div>
-
-    <!-- Error State -->
-    <div id="error-container" class="hidden text-center py-12">
-      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 mb-4">
-        <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
-      </div>
-      <h3 class="text-xl font-medium text-gray-300 mb-2">Failed to load market data</h3>
-      <button id="retry-btn" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
-        Try Again
-      </button>
-    </div>
-  </section>
-
-  <script>
-  // DOM Elements
-  const cryptoTable = document.getElementById('crypto-table');
-  const loadingElement = document.getElementById('loading');
-  const errorContainer = document.getElementById('error-container');
-  const retryBtn = document.getElementById('retry-btn');
-  const cryptoSelect = document.getElementById('crypto-select');
-  const priceChartCtx = document.getElementById('price-chart').getContext('2d');
-
-  // Flask Backend Configuration
-  const API_URL = 'http://127.0.0.1:8000'; // Your Flask backend URL
   
-  // Chart instance
-  let priceChart;
-
-  // Enhanced error handling in your frontend JavaScript
-  async function fetchTickerData(symbol) {
-    try {
-      const response = await axios.get(`${API_URL}/binance/price/${symbol}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching ticker data:', error);
-      // Return mock data as fallback
-      return {
-        symbol: symbol,
-        price: "0",
-        priceChange: "0",
-        priceChangePercent: "0",
-        volume: "0"
-      };
-    }
-  }
-
-  async function fetchHistoricalData(symbol, days = 1) {
-    try {
-      const response = await axios.get(`${API_URL}/ohlc/${symbol}?days=${days}`);
-      return response.data.series.map(item => ({
-        time: new Date(item.ts),
-        close: item.price
-      }));
-    } catch (error) {
-      console.error('Error fetching historical data:', error);
-      // Return mock data as fallback
-      const mockData = [];
-      const now = new Date();
-      const basePrice = symbol === "BTCUSDT" ? 42000 : 2200;
-      
-      for (let i = 24; i > 0; i--) {
-        mockData.push({
-          time: new Date(now - i * 3600000),
-          close: basePrice + (Math.random() - 0.5) * 1000
-        });
-      }
-      return mockData;
-    }
-  }
-
-  // Display market data in table
-  async function displayMarketData() {
-    try {
-      loadingElement.classList.remove('hidden');
-      cryptoTable.innerHTML = '';
-      errorContainer.classList.add('hidden');
-
-      const results = await Promise.all(['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT'].map(symbol => fetchTickerData(symbol)));
-      
-      results.forEach(data => {
-        const changePercent = parseFloat(data.priceChangePercent);
-        const changeClass = changePercent >= 0 ? 'positive-change' : 'negative-change';
-        const changeSign = changePercent >= 0 ? '+' : '';
+  <div class="flex">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 min-h-screen glass-card border-r border-white/5 fixed left-0 top-0 z-50">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-8">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
+            <i class="fas fa-chart-line text-white"></i>
+          </div>
+          <span class="text-xl font-bold gradient-text">CryptoSense</span>
+        </div>
         
-        const row = document.createElement('tr');
-        row.className = 'table-row';
-        row.innerHTML = `
-          <td class="px-6 py-4">${data.symbol.replace('USDT', '')}</td>
-          <td class="px-6 py-4">$${parseFloat(data.price).toFixed(2)}</td>
-          <td class="px-6 py-4 ${changeClass}">${changeSign}${changePercent}%</td>
-          <td class="px-6 py-4">$${(parseFloat(data.volume)/1000000).toFixed(2)}M</td>
-          <td class="px-6 py-4">
-            <button onclick="loadChart('${data.symbol}')" class="px-3 py-1 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition">
-              View Chart
-            </button>
-          </td>
-        `;
-        cryptoTable.appendChild(row);
-      });
-
-      // Load initial chart
-      loadChart(cryptoSelect.value);
-
-    } catch (error) {
-      console.error('Error displaying market data:', error);
-      loadingElement.classList.add('hidden');
-      errorContainer.classList.remove('hidden');
-    } finally {
-      loadingElement.classList.add('hidden');
-    }
-  }
-
-  // Create or update price chart
-  async function loadChart(symbol) {
-    try {
-      const historicalData = await fetchHistoricalData(symbol);
-      const labels = historicalData.map(item => item.time.toLocaleDateString());
-      const prices = historicalData.map(item => item.close);
+        <nav class="space-y-2">
+          <a href="dashboard.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white border-l-4 border-transparent">
+            <i class="fas fa-th-large w-5"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="market.html" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-xl text-white border-l-4 border-transparent">
+            <i class="fas fa-chart-bar w-5"></i>
+            <span>Markets</span>
+          </a>
+          <a href="portfolio.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white border-l-4 border-transparent">
+            <i class="fas fa-wallet w-5"></i>
+            <span>Portfolio</span>
+          </a>
+          <a href="news.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white border-l-4 border-transparent">
+            <i class="fas fa-newspaper w-5"></i>
+            <span>News</span>
+          </a>
+          <a href="tools.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white border-l-4 border-transparent">
+            <i class="fas fa-tools w-5"></i>
+            <span>Tools</span>
+          </a>
+          <a href="learn.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white border-l-4 border-transparent">
+            <i class="fas fa-graduation-cap w-5"></i>
+            <span>Learn</span>
+          </a>
+        </nav>
+        
+        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/5">
+          <a href="index.html" class="flex items-center gap-3 text-gray-400 hover:text-white transition">
+            <i class="fas fa-home"></i>
+            <span>Back to Home</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 p-8">
       
-      if (priceChart) {
-        priceChart.data.labels = labels;
-        priceChart.data.datasets[0].data = prices;
-        priceChart.update();
-      } else {
-        priceChart = new Chart(priceChartCtx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: `${symbol.replace('USDT', '')} Price (USD)`,
-              data: prices,
-              borderColor: 'rgb(109, 40, 217)',
-              backgroundColor: 'rgba(109, 40, 217, 0.1)',
-              borderWidth: 2,
-              tension: 0.1,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: false,
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.1)'
-                },
-                ticks: {
-                  color: '#e2e8f0'
-                }
-              },
-              x: {
-                grid: {
-                  color: 'rgba(255, 255, 255, 0.1)'
-                },
-                ticks: {
-                  color: '#e2e8f0'
-                }
-              }
+      <header class="mb-8" data-aos="fade-down">
+        <h1 class="text-3xl font-bold mb-2">Crypto Markets</h1>
+        <p class="text-gray-400">Real-time prices and market data from Binance</p>
+      </header>
+      
+      <!-- Market Heatmap -->
+      <div class="glass-card p-6 mb-8" data-aos="fade-up">
+        <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+          <i class="fas fa-th text-purple-400"></i>
+          Market Heatmap
+        </h2>
+        <div id="heatmap" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+          <!-- Heatmap cells will be loaded here -->
+        </div>
+        <div class="flex items-center justify-center gap-6 mt-6 text-sm">
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded bg-red-500"></div>
+            <span class="text-gray-400">Bearish</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded bg-gray-500"></div>
+            <span class="text-gray-400">Neutral</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded bg-green-500"></div>
+            <span class="text-gray-400">Bullish</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Chart Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        
+        <!-- Price Chart -->
+        <div class="lg:col-span-2 glass-card p-6" data-aos="fade-up">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+              <i class="fas fa-chart-area text-cyan-400"></i>
+              Price Chart
+            </h2>
+            <select id="crypto-select" class="input-field px-4 py-2 rounded-xl text-white">
+              <option value="BTCUSDT">Bitcoin (BTC)</option>
+              <option value="ETHUSDT">Ethereum (ETH)</option>
+              <option value="BNBUSDT">BNB (BNB)</option>
+              <option value="SOLUSDT">Solana (SOL)</option>
+              <option value="ADAUSDT">Cardano (ADA)</option>
+              <option value="XRPUSDT">Ripple (XRP)</option>
+            </select>
+          </div>
+          <div class="h-80">
+            <canvas id="price-chart"></canvas>
+          </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="100">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fas fa-info-circle text-yellow-400"></i>
+            Quick Stats
+          </h2>
+          <div id="quick-stats" class="space-y-4">
+            <!-- Stats will load here -->
+            <div class="p-4 rounded-xl bg-white/5">
+              <p class="text-sm text-gray-400 mb-1">Current Price</p>
+              <p id="stat-price" class="text-2xl font-bold">$0.00</p>
+            </div>
+            <div class="p-4 rounded-xl bg-white/5">
+              <p class="text-sm text-gray-400 mb-1">24h Change</p>
+              <p id="stat-change" class="text-xl font-bold">0%</p>
+            </div>
+            <div class="p-4 rounded-xl bg-white/5">
+              <p class="text-sm text-gray-400 mb-1">24h High</p>
+              <p id="stat-high" class="text-xl font-bold text-green-400">$0.00</p>
+            </div>
+            <div class="p-4 rounded-xl bg-white/5">
+              <p class="text-sm text-gray-400 mb-1">24h Low</p>
+              <p id="stat-low" class="text-xl font-bold text-red-400">$0.00</p>
+            </div>
+            <div class="p-4 rounded-xl bg-white/5">
+              <p class="text-sm text-gray-400 mb-1">24h Volume</p>
+              <p id="stat-volume" class="text-xl font-bold">$0.00</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Market Table -->
+      <div class="glass-card p-6" data-aos="fade-up">
+        <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+          <i class="fas fa-list text-green-400"></i>
+          All Markets
+        </h2>
+        
+        <!-- Loading State -->
+        <div id="loading" class="flex justify-center items-center py-12">
+          <div class="loading-spinner"></div>
+          <span class="ml-3 text-lg text-gray-400">Loading market data...</span>
+        </div>
+        
+        <!-- Error State -->
+        <div id="error-container" class="hidden text-center py-12">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 mb-4">
+            <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-medium text-gray-300 mb-2">Failed to load market data</h3>
+          <p class="text-gray-400 mb-4">Make sure the backend server is running</p>
+          <button id="retry-btn" class="px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition">
+            Try Again
+          </button>
+        </div>
+        
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-4 px-4 text-gray-400 font-medium">#</th>
+                <th class="text-left py-4 px-4 text-gray-400 font-medium">Coin</th>
+                <th class="text-right py-4 px-4 text-gray-400 font-medium">Price</th>
+                <th class="text-right py-4 px-4 text-gray-400 font-medium">24h Change</th>
+                <th class="text-right py-4 px-4 text-gray-400 font-medium">24h Volume</th>
+                <th class="text-center py-4 px-4 text-gray-400 font-medium">Action</th>
+              </tr>
+            </thead>
+            <tbody id="crypto-table">
+              <!-- Data will load here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+    </main>
+  </div>
+  
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    AOS.init({ once: true, duration: 800 });
+    
+    const cryptoTable = document.getElementById('crypto-table');
+    const loadingElement = document.getElementById('loading');
+    const errorContainer = document.getElementById('error-container');
+    const retryBtn = document.getElementById('retry-btn');
+    const cryptoSelect = document.getElementById('crypto-select');
+    const priceChartCtx = document.getElementById('price-chart').getContext('2d');
+    
+    const API_URL = 'http://127.0.0.1:8000';
+    
+    let priceChart;
+    let marketData = {};
+    
+    const logoMap = {
+      'BTC': 'bitcoin-btc',
+      'ETH': 'ethereum-eth',
+      'SOL': 'solana-sol',
+      'BNB': 'bnb-bnb',
+      'XRP': 'xrp-xrp',
+      'ADA': 'cardano-ada',
+      'DOGE': 'dogecoin-doge',
+      'DOT': 'polkadot-new-dot',
+      'MATIC': 'polygon-matic',
+      'AVAX': 'avalanche-avax'
+    };
+    
+    async function fetchTickerData(symbol) {
+      try {
+        const response = await axios.get(`${API_URL}/binance/price/${symbol}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching ticker data:', error);
+        return null;
+      }
+    }
+    
+    async function fetchHistoricalData(symbol, days = 1) {
+      try {
+        const response = await axios.get(`${API_URL}/ohlc/${symbol}?days=${days}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching historical data:', error);
+        return [];
+      }
+    }
+    
+    // Display market data in heatmap
+    function displayHeatmap(data) {
+      const heatmap = document.getElementById('heatmap');
+      heatmap.innerHTML = Object.entries(data).map(([symbol, info]) => {
+        const change = parseFloat(info.priceChangePercent);
+        const intensity = Math.min(Math.abs(change) / 10, 1);
+        let bgColor;
+        
+        if (change >= 5) bgColor = 'bg-green-500';
+        else if (change >= 2) bgColor = 'bg-green-600';
+        else if (change >= 0) bgColor = 'bg-green-700/50';
+        else if (change >= -2) bgColor = 'bg-red-700/50';
+        else if (change >= -5) bgColor = 'bg-red-600';
+        else bgColor = 'bg-red-500';
+        
+        const coinName = symbol.replace('USDT', '');
+        
+        return `
+          <div class="heatmap-cell ${bgColor} p-3 rounded-xl text-center" 
+               onclick="selectCrypto('${symbol}')"
+               title="${coinName}: ${change >= 0 ? '+' : ''}${change.toFixed(2)}%">
+            <p class="font-bold text-white">${coinName}</p>
+            <p class="text-xs ${change >= 0 ? 'text-green-200' : 'text-red-200'}">
+              ${change >= 0 ? '+' : ''}${change.toFixed(1)}%
+            </p>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function selectCrypto(symbol) {
+      cryptoSelect.value = symbol;
+      loadChart(symbol);
+      updateStats(symbol);
+    }
+    
+    async function displayMarketData() {
+      try {
+        loadingElement.classList.remove('hidden');
+        cryptoTable.innerHTML = '';
+        errorContainer.classList.add('hidden');
+        
+        const response = await axios.get(`${API_URL}/market/overview`);
+        marketData = response.data;
+        
+        // Display heatmap
+        displayHeatmap(marketData);
+        
+        // Display table
+        let index = 1;
+        for (const [symbol, data] of Object.entries(marketData)) {
+          const changePercent = parseFloat(data.priceChangePercent);
+          const changeClass = changePercent >= 0 ? 'positive-change' : 'negative-change';
+          const changeSign = changePercent >= 0 ? '+' : '';
+          const coinName = symbol.replace('USDT', '');
+          const logoName = logoMap[coinName] || coinName.toLowerCase();
+          
+          const row = document.createElement('tr');
+          row.className = 'table-row border-b border-white/5 transition';
+          row.innerHTML = `
+            <td class="py-4 px-4 text-gray-400">${index}</td>
+            <td class="py-4 px-4">
+              <div class="flex items-center gap-3">
+                <img src="https://cryptologos.cc/logos/${logoName}-logo.svg" 
+                     alt="${coinName}" class="w-8 h-8"
+                     onerror="this.src='https://via.placeholder.com/32'">
+                <div>
+                  <p class="font-semibold">${coinName}</p>
+                  <p class="text-xs text-gray-400">${coinName}/USDT</p>
+                </div>
+              </div>
+            </td>
+            <td class="py-4 px-4 text-right font-semibold">
+              $${parseFloat(data.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: parseFloat(data.price) < 1 ? 4 : 2})}
+            </td>
+            <td class="py-4 px-4 text-right ${changeClass} font-semibold">
+              ${changeSign}${changePercent.toFixed(2)}%
+            </td>
+            <td class="py-4 px-4 text-right text-gray-400">
+              $${(parseFloat(data.quoteVolume)/1000000).toFixed(2)}M
+            </td>
+            <td class="py-4 px-4 text-center">
+              <button onclick="selectCrypto('${symbol}')" 
+                      class="px-4 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 rounded-lg transition">
+                <i class="fas fa-chart-line mr-1"></i>Chart
+              </button>
+            </td>
+          `;
+          cryptoTable.appendChild(row);
+          index++;
+        }
+        
+        // Load initial chart
+        loadChart(cryptoSelect.value);
+        updateStats(cryptoSelect.value);
+        
+      } catch (error) {
+        console.error('Error displaying market data:', error);
+        loadingElement.classList.add('hidden');
+        errorContainer.classList.remove('hidden');
+      } finally {
+        loadingElement.classList.add('hidden');
+      }
+    }
+    
+    function updateStats(symbol) {
+      const data = marketData[symbol];
+      if (!data) return;
+      
+      const price = parseFloat(data.price);
+      const change = parseFloat(data.priceChangePercent);
+      const high = parseFloat(data.highPrice);
+      const low = parseFloat(data.lowPrice);
+      const volume = parseFloat(data.quoteVolume);
+      
+      document.getElementById('stat-price').textContent = '$' + price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 4 : 2});
+      
+      const changeEl = document.getElementById('stat-change');
+      changeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+      changeEl.className = `text-xl font-bold ${change >= 0 ? 'positive-change' : 'negative-change'}`;
+      
+      document.getElementById('stat-high').textContent = '$' + high.toLocaleString('en-US', {minimumFractionDigits: 2});
+      document.getElementById('stat-low').textContent = '$' + low.toLocaleString('en-US', {minimumFractionDigits: 2});
+      document.getElementById('stat-volume').textContent = '$' + (volume/1e6).toFixed(2) + 'M';
+    }
+    
+    async function loadChart(symbol) {
+      try {
+        const historicalData = await fetchHistoricalData(symbol);
+        
+        if (!historicalData || historicalData.length === 0) return;
+        
+        const labels = historicalData.map(item => {
+          const date = new Date(item[0]);
+          return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        });
+        const prices = historicalData.map(item => parseFloat(item[4])); // Close price
+        
+        const gradient = priceChartCtx.createLinearGradient(0, 0, 0, 320);
+        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.5)');
+        gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+        
+        if (priceChart) {
+          priceChart.data.labels = labels;
+          priceChart.data.datasets[0].data = prices;
+          priceChart.data.datasets[0].label = `${symbol.replace('USDT', '')} Price (USD)`;
+          priceChart.update();
+        } else {
+          priceChart = new Chart(priceChartCtx, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: `${symbol.replace('USDT', '')} Price (USD)`,
+                data: prices,
+                borderColor: '#8B5CF6',
+                backgroundColor: gradient,
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: '#8B5CF6'
+              }]
             },
-            plugins: {
-              legend: {
-                labels: {
-                  color: '#e2e8f0'
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  mode: 'index',
+                  intersect: false,
+                  backgroundColor: 'rgba(0,0,0,0.8)',
+                  titleColor: '#fff',
+                  bodyColor: '#fff',
+                  borderColor: '#8B5CF6',
+                  borderWidth: 1,
+                  callbacks: {
+                    label: (ctx) => `$${ctx.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2})}`
+                  }
                 }
               },
-              tooltip: {
-                mode: 'index',
-                intersect: false
+              scales: {
+                x: {
+                  grid: { color: 'rgba(255,255,255,0.05)' },
+                  ticks: { color: '#6B7280', maxTicksLimit: 8 }
+                },
+                y: {
+                  grid: { color: 'rgba(255,255,255,0.05)' },
+                  ticks: {
+                    color: '#6B7280',
+                    callback: (val) => '$' + val.toLocaleString()
+                  }
+                }
               }
             }
-          }
-        });
+          });
+        }
+        
+        updateStats(symbol);
+      } catch (error) {
+        console.error('Error loading chart:', error);
       }
-    } catch (error) {
-      console.error('Error loading chart:', error);
     }
-  }
-
-  // Crypto selection change handler
-  cryptoSelect.addEventListener('change', (e) => {
-    loadChart(e.target.value);
-  });
-
-  // Event Listeners
-  retryBtn.addEventListener('click', displayMarketData);
-  
-  // Initialize
-  displayMarketData();
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCOFndrtqX-ZLDlbpT9SI2k7P78EllP9LI",
-  authDomain: "project-s-8b77b.firebaseapp.com",
-  projectId: "project-s-8b77b",
-  storageBucket: "project-s-8b77b.firebasestorage.app",
-  messagingSenderId: "915091110149",
-  appId: "1:915091110149:web:8c7625e10c00f379819f6c",
-  measurementId: "G-V8F7Z59X07"
-};
-</script>
+    
+    cryptoSelect.addEventListener('change', (e) => {
+      loadChart(e.target.value);
+    });
+    
+    retryBtn.addEventListener('click', displayMarketData);
+    
+    // Initialize
+    displayMarketData();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(displayMarketData, 30000);
+  </script>
 </body>
 </html>
